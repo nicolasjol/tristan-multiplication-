@@ -235,7 +235,7 @@
     <div class="hero">
       <button id="sound-btn" class="icon-btn" aria-label="Toggle sound">🔊</button>
       <h1>🚀 Tristan's Multiplication Adventure</h1>
-      <p>Week of Oct 19 – 22, 2026 · Third Grade ✏️</p>
+      <p>Week of Oct 26 – 29, 2026 · Third Grade ✏️</p>
     </div>
 
     <div class="card">
@@ -413,26 +413,26 @@ function onTap(el, fn) {
   });
 }
 
-/* Week of Oct 19–22, 2026 · vanilla JS, localStorage only */
+/* Week of Oct 26–29, 2026 · vanilla JS, localStorage only */
 
-const WEEK_ID = '2026-10-19';
+const WEEK_ID = '2026-10-26';
 const SCHOOL_GOAL_MIN = 30;
 const DAY_GOAL_SEC = 8 * 60;
 
 const DAYS = [
-  { key: 'monday', name: 'Monday', date: 'Oct 19', emoji: '🚀', facts: [2, 5, 10],
+  { key: 'monday', name: 'Monday', date: 'Oct 26', emoji: '🚀', facts: [0, 1, 2],
     phases: [
-      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [2, 5, 10], retry: true, hint: true,
+      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [0, 1, 2], retry: true, hint: true,
         desc: '2 minutes · easy problems in order — watch for the patterns!',
-        tip: '💡 Tip: look for the pattern as the numbers count up.' },
-      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [2, 5, 10], retry: true,
-        desc: '4 minutes · mixed-up ×2, ×5 and ×10 questions.',
+        tip: '💡 Tip: anything × 0 is 0, and anything × 1 stays the same!' },
+      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [0, 1, 2], retry: true,
+        desc: '4 minutes · mixed-up ×0, ×1 and ×2 questions.',
         tip: '💡 Miss one? It will come back so you can conquer it!' },
-      { type: 'speed', label: 'Speed Challenge', emoji: '⚡', secs: 120, facts: [2, 5, 10], retry: false,
+      { type: 'speed', label: 'Speed Challenge', emoji: '⚡', secs: 120, facts: [0, 1, 2], retry: false,
         desc: '2 minutes · how many can you answer? Go go go!',
         tip: '💡 Tip: fast fingers — the clock is ticking!' },
     ] },
-  { key: 'tuesday', name: 'Tuesday', date: 'Oct 20', emoji: '🦖', facts: [3, 4],
+  { key: 'tuesday', name: 'Tuesday', date: 'Oct 27', emoji: '🦖', facts: [3, 4],
     phases: [
       { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [3, 4], retry: true, hint: true,
         desc: '2 minutes · easy ×3 and ×4 problems in order.',
@@ -444,28 +444,28 @@ const DAYS = [
         desc: '2 minutes · how many can you answer? Go go go!',
         tip: '💡 Tip: fast fingers — the clock is ticking!' },
     ] },
-  { key: 'wednesday', name: 'Wednesday', date: 'Oct 21', emoji: '🦄', facts: [6, 7],
+  { key: 'wednesday', name: 'Wednesday', date: 'Oct 28', emoji: '🦄', facts: [5, 6],
     phases: [
-      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [6, 7], retry: true, hint: true,
-        desc: '2 minutes · easy ×6 and ×7 problems in order.',
-        tip: '💡 Tip: think "5 groups, then a few more"!' },
-      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [6, 7], retry: true,
-        desc: '4 minutes · mixed-up ×6 and ×7 questions.',
+      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [5, 6], retry: true, hint: true,
+        desc: '2 minutes · easy ×5 and ×6 problems in order.',
+        tip: '💡 Tip: for 6s, think "5 groups, then one more"!' },
+      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [5, 6], retry: true,
+        desc: '4 minutes · mixed-up ×5 and ×6 questions.',
         tip: '💡 Miss one? It will come back so you can conquer it!' },
-      { type: 'speed', label: 'Speed Challenge', emoji: '⚡', secs: 120, facts: [6, 7], retry: false,
+      { type: 'speed', label: 'Speed Challenge', emoji: '⚡', secs: 120, facts: [5, 6], retry: false,
         desc: '2 minutes · how many can you answer? Go go go!',
         tip: '💡 Tip: fast fingers — the clock is ticking!' },
     ] },
-  { key: 'thursday', name: 'Thursday', date: 'Oct 22', emoji: '🏆', facts: [8, 9],
+  { key: 'thursday', name: 'Thursday', date: 'Oct 29', emoji: '🏆', facts: [7, 8, 9, 10],
     phases: [
-      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [8, 9], retry: true, hint: true,
-        desc: '2 minutes · easy ×8 and ×9 problems in order.',
+      { type: 'warmup', label: 'Warm-Up', emoji: '🔥', secs: 120, facts: [7, 8, 9, 10], retry: true, hint: true,
+        desc: '2 minutes · easy ×7, ×8, ×9 and ×10 problems in order.',
         tip: '💡 Tip: for 9s, do ×10 then take one away!' },
-      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [8, 9], retry: true,
-        desc: '4 minutes · mixed-up ×8 and ×9 questions.',
+      { type: 'quiz', label: 'Quiz Time', emoji: '🧠', secs: 240, facts: [7, 8, 9, 10], retry: true,
+        desc: '4 minutes · mixed-up ×7, ×8, ×9 and ×10 questions.',
         tip: '💡 Miss one? It will come back so you can conquer it!' },
-      { type: 'mixed', label: 'Mixed Facts Challenge', emoji: '🌈', secs: 300, facts: [2, 3, 4, 5, 6, 7, 8, 9, 10], retry: false,
-        desc: '5 minutes · EVERYTHING from this week, all mixed up!',
+      { type: 'mixed', label: 'Mixed Facts Challenge', emoji: '🌈', secs: 300, facts: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], retry: false,
+        desc: '5 minutes · EVERYTHING, all mixed up!',
         tip: '💡 Tip: use the tricks you learned — you know them all!' },
     ] },
 ];
@@ -587,6 +587,9 @@ function factsLabel(facts) { return facts.map(f => '×' + f).join(' '); }
 function explain(a, b) {
   const ans = a * b;
   const B = x => '<b>' + x + '</b>';
+  if (a === 0 || b === 0) {
+    return 'Anything times 0 is ' + B(0) + '! 🫥';
+  }
   if (a === 10 || b === 10) {
     const n = a === 10 ? b : a;
     return 'Multiplying by 10 is easy — just put a 0 after ' + n + ': ' + n + ' × 10 = ' + B(ans) + ' 🎯';
