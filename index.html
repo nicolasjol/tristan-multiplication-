@@ -128,6 +128,12 @@
   @keyframes flashBad { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-12px); } 40% { transform: translateX(12px); } 60% { transform: translateX(-8px); } 80% { transform: translateX(8px); } }
   .problem { font-size: clamp(3rem, 13vw, 4.6rem); font-weight: 900; letter-spacing: 1px; line-height: 1.25; }
   .problem .op { color: #a5a5bd; margin: 0 .1em; }
+  /* ---------- Arrays & number lines ---------- */
+  #q-prompt { font-size: 1.35rem; font-weight: 800; color: #3a2b8f; margin-bottom: 10px; line-height: 1.35; }
+  #visual-box { margin: 4px auto 14px; display: flex; justify-content: center; }
+  .array-grid { display: grid; gap: 9px; justify-content: center; }
+  .array-grid .dot { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff8ab5, #ff5fa2 55%, #d63d7f); box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+  .numline { width: 100%; max-width: 520px; height: auto; display: block; }
   #entry { color: #7b2ff7; display: inline-block; min-width: 1.4em; border-bottom: 7px solid #e9e7f5; }
   #entry.typing { border-bottom-color: #7b2ff7; }
   .hint-box {
@@ -257,6 +263,14 @@
       <button class="btn purple" id="bonus-btn">Start Challenge ⚡</button>
     </div>
 
+    <div class="card" style="text-align:center">
+      <div class="trophy">🔢</div>
+      <h2>Arrays &amp; Number Lines</h2>
+      <p class="sub">See what multiplication <b>means</b> — rows of dots, jumps on a number line, and finding the missing factor.</p>
+      <p class="bonus-best" id="arrays-best"></p>
+      <button class="btn green" id="arrays-btn">Practice 🔢</button>
+    </div>
+
     <details class="parents">
       <summary>ℹ️ For parents</summary>
       <p>
@@ -267,7 +281,7 @@
       <p>
         Progress is saved <b>in this browser only</b> (nothing is sent anywhere, no login).
         Only <b>active practice time</b> counts — the timer pauses automatically if the tab is hidden
-        or if Tristan taps ⏸️. The optional 95-problem challenge is extra and doesn't count toward the 30 minutes.
+        or if Tristan taps ⏸️. The optional 95-problem challenge is extra and doesn't count toward the 30 minutes. The Arrays &amp; Number Lines practice is extra too — it teaches what the facts mean.
       </p>
     </details>
     <button class="reset-link" id="reset-btn">Reset all progress for this week</button>
@@ -289,6 +303,8 @@
 
     <div class="qcard" id="qcard">
       <div id="star-pop">⭐</div>
+      <div id="q-prompt" class="hidden"></div>
+      <div id="visual-box" class="hidden"></div>
       <div class="hint-box hidden" id="hint-box"></div>
       <div class="problem"><span id="pa">7</span><span class="op">×</span><span id="pb">6</span><span class="op">=</span><span id="entry">?</span></div>
       <div id="explain-box" class="hidden">
@@ -475,6 +491,94 @@ const BONUS = { type: 'bonus', label: '95-Problem Challenge', emoji: '⚡', secs
   desc: '5 minutes · answer 95 correctly, just like the school test!',
   tip: '💡 Tip: stay calm and steady — accuracy first!' };
 
+/* ---------------- Arrays & Number Lines mode ----------------
+   Teaches what multiplication MEANS: rows × columns in an array,
+   jumps on a number line, and finding a missing factor. */
+const ARRAYS_PHASE = { type: 'arrays', label: 'Arrays & Number Lines', emoji: '🔢', secs: 300,
+  facts: [], retry: true, hint: true,
+  desc: '5 minutes · see what multiplication really means — rows, jumps, and missing factors!',
+  tip: '💡 Tip: count the rows, then count each row!' };
+
+function randInt(lo, hi) { return lo + ((Math.random() * (hi - lo + 1)) | 0); }
+
+function arrayVisual(rows, cols) {
+  let dots = '';
+  for (let i = 0; i < rows * cols; i++) dots += '<span class="dot"></span>';
+  return '<div class="array-grid" style="grid-template-columns:repeat(' + cols + ',30px)">' + dots + '</div>';
+}
+
+function numberLineSVG(jumps, size, showLabels) {
+  const max = jumps * size;
+  const W = 400, H = 100, x0 = 26, x1 = 374, y = 56;
+  const x = v => x0 + (v / max) * (x1 - x0);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="numline" aria-hidden="true">';
+  s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="#3a2b8f" stroke-width="3" stroke-linecap="round"/>';
+  for (let i = 0; i < jumps; i++) {
+    const xa = x(i * size), xb = x((i + 1) * size), r = (xb - xa) / 2;
+    s += '<path d="M ' + xa + ' ' + y + ' A ' + r + ' ' + (r * 0.9) + ' 0 0 1 ' + xb + ' ' + y + '" fill="none" stroke="#7b2ff7" stroke-width="3.5"/>';
+    s += '<circle cx="' + xb + '" cy="' + y + '" r="5.5" fill="#ff5fa2"/>';
+  }
+  s += '<circle cx="' + x(0) + '" cy="' + y + '" r="5.5" fill="#06d6a0"/>';
+  if (showLabels) {
+    for (let v = 0; v <= max; v += size) {
+      s += '<text x="' + x(v) + '" y="' + (y + 30) + '" font-size="16" font-weight="800" fill="#3a2b8f" text-anchor="middle">' + v + '</text>';
+    }
+  } else {
+    s += '<text x="' + x(0) + '" y="' + (y + 30) + '" font-size="16" font-weight="800" fill="#3a2b8f" text-anchor="middle">0</text>';
+  }
+  return s + '</svg>';
+}
+
+function buildArraysQueue() {
+  const q = [];
+  // Two arrays, three steps each: rows -> per row -> total
+  for (let k = 0; k < 2; k++) {
+    const r = randInt(2, 4), c = randInt(2, 5);
+    const vis = arrayVisual(r, c);
+    q.push({ kind: 'array', prompt: 'How many rows are there?', ans: r, visual: vis,
+      hint: 'Count the rows going down 👇',
+      explain: 'Count the rows: there are <b>' + r + '</b> rows. Each row has ' + c + ' dots.' });
+    q.push({ kind: 'array', prompt: 'How many dots in each row?', ans: c, visual: vis,
+      hint: 'Count the dots across one row 👉',
+      explain: 'Each row has <b>' + c + '</b> dots. There are ' + r + ' rows, so the sentence is ' + r + ' × ' + c + '.' });
+    q.push({ kind: 'array', prompt: 'How many dots in all?', ans: r * c, visual: vis,
+      hint: 'Rows × dots in each row!',
+      explain: '<b>' + r + '</b> rows × <b>' + c + '</b> dots in each row = <b>' + (r * c) + '</b> dots in all! 🎉' });
+  }
+  // Two number lines, two steps each: count the jumps -> total distance
+  for (let k = 0; k < 2; k++) {
+    const j = randInt(2, 5), s = randInt(2, 5);
+    q.push({ kind: 'numberline', prompt: 'How many jumps are on the number line?', ans: j,
+      visual: numberLineSVG(j, s, true),
+      hint: 'Count the hops! 🐸',
+      explain: 'There are <b>' + j + '</b> jumps. Each jump is ' + s + '.' });
+    q.push({ kind: 'numberline', prompt: 'Each jump is ' + s + '. How far did we jump in all?', ans: j * s,
+      visual: numberLineSVG(j, s, false),
+      hint: 'Jumps × jump size!',
+      explain: '<b>' + j + '</b> jumps of <b>' + s + '</b> = <b>' + (j * s) + '</b>. That\'s ' + j + ' × ' + s + ' = ' + (j * s) + ' 🎯' });
+  }
+  // Two missing factors: known × ? = product
+  for (let k = 0; k < 2; k++) {
+    const a = randInt(2, 9), b = randInt(2, 9);
+    const known = Math.random() < 0.5 ? a : b;
+    const ans = known === a ? b : a;
+    q.push({ kind: 'missing', mfKnown: known, prod: a * b, ans: ans,
+      hint: 'What number times ' + known + ' makes ' + (a * b) + '?',
+      explain: 'What times ' + known + ' is ' + (a * b) + '? It\'s <b>' + ans + '</b>, because ' + known + ' × ' + ans + ' = ' + (a * b) + ' 💡' });
+  }
+  return q;
+}
+
+function startArrays() {
+  S = { mode: 'arrays', day: null, phases: [ARRAYS_PHASE], phaseIdx: -1, phase: null,
+    activeSec: 0, stats: { correct: 0, wrong: 0, streak: 0, best: 0 },
+    tricky: {}, struggles: [], qCount: 0, lastKey: null, q: null,
+    locked: true, paused: false, timerRunning: false, warmSeq: [], warmI: 0, phaseStat: null,
+    queue: buildArraysQueue(), arrI: 0 };
+  showScreen('screen-practice');
+  startPhase(0);
+}
+
 const PRAISE = ['🎉 Awesome!', '⭐ Superstar!', '🚀 Amazing!', '💪 You got it!', '🌈 Fantastic!',
   '🎊 Way to go!', '👏 Brilliant!', '🦄 Magical!', '🌟 Stellar!', '🍕 Pizza-tastic!', '🎈 Wonderful!'];
 
@@ -483,12 +587,12 @@ const LS_KEY = 'tristan-mult-v1';
 function freshData() {
   const days = {};
   DAYS.forEach(d => { days[d.key] = { sec: 0, sessions: 0 }; });
-  return { weekId: WEEK_ID, sound: true, days, bonus: { attempts: 0, best: 0 } };
+  return { weekId: WEEK_ID, sound: true, days, bonus: { attempts: 0, best: 0 }, arrays: { attempts: 0, best: 0 } };
 }
 function loadData() {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) { const d = JSON.parse(raw); if (d && d.weekId === WEEK_ID && d.days) return d; }
+    if (raw) { const d = JSON.parse(raw); if (d && d.weekId === WEEK_ID && d.days) { if (!d.arrays) d.arrays = { attempts: 0, best: 0 }; return d; } }
   } catch (e) {}
   return freshData();
 }
@@ -666,6 +770,9 @@ function renderHome() {
   $('bonus-best').textContent = data.bonus.best > 0
     ? '🌟 Best so far: ' + data.bonus.best + ' / 95 correct'
     : 'No attempts yet — be the first! 🎯';
+  $('arrays-best').textContent = data.arrays.best > 0
+    ? '🌟 Best so far: ' + data.arrays.best + ' correct'
+    : 'New! Practice what the quiz tested 📐';
   $('sound-btn').textContent = data.sound ? '🔊' : '🔇';
 }
 
@@ -675,6 +782,7 @@ onTap($('sound-btn'), () => {
   if (data.sound) sfx.correct();
 });
 onTap($('bonus-btn'), () => startBonus());
+onTap($('arrays-btn'), () => startArrays());
 onTap($('reset-btn'), () => {
   if (confirm('Reset all practice progress for this week? This cannot be undone.')) {
     const sound = data.sound;
@@ -772,14 +880,18 @@ const Timer = {
 /* ---------------- Questions ---------------- */
 function pickQuestion() {
   const ph = S.phase;
+  if (S.mode === 'arrays') {
+    if (S.arrI >= S.queue.length) { S.queue = buildArraysQueue(); S.arrI = 0; }
+    return S.queue[S.arrI++];
+  }
   if (ph.type === 'warmup') {
     const q = S.warmSeq[S.warmI % S.warmSeq.length]; S.warmI++;
-    return { a: q.a, b: q.b };
+    return { kind: 'fact', a: q.a, b: q.b, ans: q.a * q.b };
   }
   if (S.struggles.length && S.qCount % 4 === 0) {
     const key = S.struggles.shift();
     const parts = key.split('x');
-    return { a: +parts[0], b: +parts[1] };
+    return { kind: 'fact', a: +parts[0], b: +parts[1], ans: (+parts[0]) * (+parts[1]) };
   }
   let a, b, key, guard = 0;
   do {
@@ -789,23 +901,43 @@ function pickQuestion() {
     key = a + 'x' + b; guard++;
   } while (key === S.lastKey && guard < 12);
   S.lastKey = key;
-  return { a, b };
+  return { kind: 'fact', a, b, ans: a * b };
 }
 
 function nextQuestion() {
   S.qCount++;
   const q = pickQuestion();
-  S.q = { a: q.a, b: q.b, ans: q.a * q.b, entry: '', tried: false };
+  S.q = { kind: q.kind || 'fact', a: q.a, b: q.b, ans: q.ans, entry: '', tried: false,
+    explain: q.explain || null, hint: q.hint || null, visual: q.visual || null,
+    prompt: q.prompt || null, mfKnown: q.mfKnown, prod: q.prod };
   S.locked = false;
-  $('pa').textContent = q.a; $('pb').textContent = q.b;
+  renderProblem();
   renderEntry();
   $('explain-box').classList.add('hidden');
   $('retry-btn').classList.add('hidden');
   const hb = $('hint-box');
-  if (S.phase.hint) { hb.innerHTML = '💡 Think: ' + explain(q.a, q.b); hb.classList.remove('hidden'); }
+  if (S.phase.hint) { hb.innerHTML = '💡 ' + (S.q.hint || ('Think: ' + explain(S.q.a, S.q.b))); hb.classList.remove('hidden'); }
   else hb.classList.add('hidden');
+  const vb = $('visual-box');
+  if (S.q.visual) { vb.innerHTML = S.q.visual; vb.classList.remove('hidden'); }
+  else { vb.innerHTML = ''; vb.classList.add('hidden'); }
+  const pr = $('q-prompt');
+  if (S.q.prompt) { pr.textContent = S.q.prompt; pr.classList.remove('hidden'); }
+  else pr.classList.add('hidden');
   const qc = $('qcard');
   qc.classList.remove('flash-good', 'flash-bad');
+}
+
+function renderProblem() {
+  const p = document.querySelector('.problem');
+  const q = S.q;
+  if (q.kind === 'missing') {
+    p.innerHTML = '<span>' + q.mfKnown + '</span><span class="op">×</span><span id="entry">?</span><span class="op">=</span><span>' + q.prod + '</span>';
+  } else if (q.kind === 'array' || q.kind === 'numberline') {
+    p.innerHTML = '<span id="entry">?</span>';
+  } else {
+    p.innerHTML = '<span id="pa">' + q.a + '</span><span class="op">×</span><span id="pb">' + q.b + '</span><span class="op">=</span><span id="entry">?</span>';
+  }
 }
 
 function renderEntry() {
@@ -885,12 +1017,14 @@ function handleWrong() {
   const qc = $('qcard');
   qc.classList.remove('flash-bad'); void qc.offsetWidth; qc.classList.add('flash-bad');
   if (S.phase.retry) {
-    $('explain-text').innerHTML = '<span class="x">🤔</span> Not quite!<br>' + explain(q.a, q.b);
+    $('explain-text').innerHTML = '<span class="x">🤔</span> Not quite!<br>' + (q.explain || explain(q.a, q.b));
     $('explain-box').classList.remove('hidden');
     $('retry-btn').classList.remove('hidden');
     q.entry = ''; renderEntry();
   } else {
-    $('explain-text').innerHTML = 'The answer is <b>' + q.a + ' × ' + q.b + ' = ' + q.ans + '</b> 👍<br>' + explain(q.a, q.b);
+    $('explain-text').innerHTML = q.explain
+      ? 'The answer is <b>' + q.ans + '</b> 👍<br>' + q.explain
+      : 'The answer is <b>' + q.a + ' × ' + q.b + ' = ' + q.ans + '</b> 👍<br>' + explain(q.a, q.b);
     $('explain-box').classList.remove('hidden');
     setTimeout(() => { if (S.timerRunning) nextQuestion(); }, 2100);
   }
@@ -906,7 +1040,7 @@ onTap($('retry-btn'), () => {
 /* ---------------- Phase header / HUD ---------------- */
 function renderPhaseHeader() {
   const ph = S.phase;
-  $('p-day-label').textContent = S.mode === 'daily' ? S.day.name + ' · ' + S.day.date : 'Bonus ⚡';
+  $('p-day-label').textContent = S.mode === 'daily' ? S.day.name + ' · ' + S.day.date : (S.mode === 'arrays' ? '🔢 Arrays' : 'Bonus ⚡');
   $('p-phase-label').textContent = ph.emoji + ' ' + ph.label;
   $('bonus-hud').classList.toggle('hidden', S.mode !== 'bonus');
   $('p-timer').textContent = fmtClock(ph.secs);
@@ -972,6 +1106,11 @@ function endSession(won) {
     if (S.stats.correct > data.bonus.best) data.bonus.best = S.stats.correct;
     save();
   }
+  if (S.mode === 'arrays') {
+    data.arrays.attempts++;
+    if (S.stats.correct > data.arrays.best) data.arrays.best = S.stats.correct;
+    save();
+  }
   renderResults(won);
   showScreen('screen-results');
 }
@@ -990,6 +1129,11 @@ function renderResults(won) {
     $('res-minutes').innerHTML = 'You answered <b>' + st.correct + ' / ' + BONUS.goal + '</b> correctly' +
       (didIt ? ' — just like the school test! 🏆' : '! Keep practicing — you\'ll get there! 💪');
     $('res-week').innerHTML = '🌟 Personal best: <b>' + data.bonus.best + ' / 95</b>';
+  } else if (S.mode === 'arrays') {
+    $('res-title').textContent = acc >= 85 ? 'Arrays ace! 🔢🎉' : acc >= 65 ? 'Great array work! 💪' : 'Good practice, Tristan! 🌱';
+    if (acc >= 70) { sfx.fanfare(); confetti(150); }
+    $('res-minutes').innerHTML = 'You answered <b>' + st.correct + '</b> array &amp; number-line questions correctly!';
+    $('res-week').innerHTML = '🌟 Personal best: <b>' + data.arrays.best + '</b> correct';
   } else {
     $('res-title').textContent = acc >= 85 ? 'Amazing work, Tristan! 🎉'
       : acc >= 65 ? 'Great job, Tristan! 💪' : 'Good practice, Tristan! 🌱';
@@ -1011,9 +1155,9 @@ function renderResults(won) {
   } else {
     $('res-tricky').classList.add('hidden');
   }
-  $('replay-btn').textContent = S.mode === 'bonus' ? '⚡ Try challenge again' : '🔁 Practice ' + S.day.name + ' again';
+  $('replay-btn').textContent = S.mode === 'bonus' ? '⚡ Try challenge again' : S.mode === 'arrays' ? '🔢 Practice arrays again' : '🔁 Practice ' + S.day.name + ' again';
 }
-onTap($('replay-btn'), () => { if (S) { S.mode === 'bonus' ? startBonus() : startDay(S.day.key); } });
+onTap($('replay-btn'), () => { if (S) { if (S.mode === 'bonus') startBonus(); else if (S.mode === 'arrays') startArrays(); else startDay(S.day.key); } });
 onTap($('home-btn'), () => { renderHome(); showScreen('screen-home'); });
 
 /* ---------------- Pause / quit ---------------- */
